@@ -108,12 +108,23 @@ class GameState {
     this.stateTextElement = null;
     this.imagesLoaded = false;
     this.imageCache = {};
+    
+    // BGM管理
+    this.bgm = {
+      normal: null,
+      awakened: null,
+      current: null,
+      volume: 0.5
+    };
   }
 
   reset() {
     // Clear all intervals
     this.intervals.forEach(interval => clearInterval(interval));
     this.intervals = [];
+    
+    // BGMを停止
+    this.stopBGM();
     
     gameData.player.hp = gameData.player.maxHP;
     gameData.boss.hp = gameData.boss.maxHP;
@@ -252,6 +263,8 @@ class GameState {
       gameData.boss.state = 'awakened';
       this.updateEnemyState();
       this.triggerScreenShake();
+      // 覚醒BGMに切り替え
+      this.playBGM('awakened');
       return 'awakened';
     }
     
@@ -362,6 +375,44 @@ class GameState {
       this.enemyElement.src = currentImageUrl;
     }
   }
+  
+  // BGM関連メソッド
+  initBGM() {
+    // 通常BGMを初期化
+    this.bgm.normal = new Audio('snd/maeno_normal.mp3');
+    this.bgm.normal.loop = true;
+    this.bgm.normal.volume = this.bgm.volume;
+    
+    // 覚醒BGMを初期化
+    this.bgm.awakened = new Audio('snd/maeno_awakened.mp3');
+    this.bgm.awakened.loop = true;
+    this.bgm.awakened.volume = this.bgm.volume;
+  }
+  
+  playBGM(type = 'normal') {
+    // 現在のBGMを停止
+    if (this.bgm.current) {
+      this.bgm.current.pause();
+      this.bgm.current.currentTime = 0;
+    }
+    
+    // 新しいBGMを再生
+    if (type === 'awakened' && this.bgm.awakened) {
+      this.bgm.current = this.bgm.awakened;
+      this.bgm.awakened.play().catch(err => console.log('BGM再生エラー:', err));
+    } else if (this.bgm.normal) {
+      this.bgm.current = this.bgm.normal;
+      this.bgm.normal.play().catch(err => console.log('BGM再生エラー:', err));
+    }
+  }
+  
+  stopBGM() {
+    if (this.bgm.current) {
+      this.bgm.current.pause();
+      this.bgm.current.currentTime = 0;
+      this.bgm.current = null;
+    }
+  }
 }
 
 // 弾クラス
@@ -418,6 +469,9 @@ async function init() {
   } catch (error) {
     console.error('Error preloading images:', error);
   }
+
+  // BGMを初期化
+  game.initBGM();
 
   // Canvas初期化
   game.canvas = document.getElementById('battle-canvas');
@@ -524,6 +578,8 @@ function startBattle() {
   game.battlePhase = 'intro';
   // 敵画像を確実に表示
   game.ensureEnemyImageVisible();
+  // BGMを再生
+  game.playBGM('normal');
   showDialog(gameData.dialogues.battleStart, () => {
     game.battlePhase = 'command';
     showCommands();
@@ -1219,6 +1275,9 @@ function endBattle(victory) {
     cancelAnimationFrame(game.animationId);
     game.animationId = null;
   }
+  
+  // BGMを停止
+  game.stopBGM();
   
   const endTitle = document.getElementById('end-title');
   const endMessage = document.getElementById('end-message');
