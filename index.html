@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マエノバトルゲーム - アンダーテール風</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- タイトル画面 -->
+        <div id="title-screen" class="screen active">
+            <div class="title-content">
+                <h1 class="game-title">マエノ<br>バトルゲーム</h1>
+                <div class="title-buttons">
+                    <button id="start-btn" class="btn btn--primary title-btn">ゲーム開始</button>
+                    <button id="help-btn" class="btn btn--secondary title-btn">操作説明</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ヘルプ画面 -->
+        <div id="help-screen" class="screen">
+            <div class="help-content">
+                <h2>操作説明</h2>
+                <div class="help-section">
+                    <h3>基本操作</h3>
+                    <p>・PCの場合：矢印キーまたはWASDキーでハート（タマシイ）を操作</p>
+                    <p>・スマートフォンの場合：画面右下の十字ボタンで操作</p>
+                    <p>・スペースキーまたはクリックで攻撃ゲージを止める</p>
+                </div>
+                <div class="help-section">
+                    <h3>コマンド</h3>
+                    <p>・<strong>たたかう</strong>：敵を攻撃します。タイミングよくゲージを止めると威力アップ！</p>
+                    <p>・<strong>こうどう</strong>：敵の様子を観察します</p>
+                    <p>・<strong>アイテム</strong>：回復薬を使ってHPを回復</p>
+                    <p>・<strong>みのがす</strong>：敵のHPが少ない時に戦闘を終了</p>
+                </div>
+                <div class="help-section">
+                    <h3>弾幕回避</h3>
+                    <p>・<strong>白い弾</strong>：当たるとダメージ</p>
+                    <p>・<strong>青い弾</strong>：動いている時に当たるとダメージ</p>
+                    <p>・<strong>オレンジの弾</strong>：止まっている時に当たるとダメージ</p>
+                </div>
+                <div class="help-section">
+                    <h3>マエノの状態変化</h3>
+                    <p>・<strong>通常状態</strong>：基本的な攻撃パターン（ダメージ8-12）</p>
+                    <p>・<strong>力溜め状態</strong>：特殊攻撃の準備中、チャンス！</p>
+                    <p>・<strong>覚醒状態</strong>：HPが30%以下で発動、超高難度攻撃（ダメージ20-25、6-8秒の長時間弾幕）</p>
+                </div>
+                <div class="help-section">
+                    <h3>マエノの特殊攻撃</h3>
+                    <p>・<strong>M字攻撃</strong>：マエノの頭文字「M」の形で弾が襲ってくる</p>
+                    <p>・<strong>螺旋嵐</strong>：螺旋状の高密度弾幕</p>
+                    <p>・<strong>十字砲撃</strong>：十字型の広範囲攻撃</p>
+                    <p>・<strong>混沌乱舞</strong>：ランダムな方向からの高速弾</p>
+                </div>
+                <button id="help-back-btn" class="btn btn--primary">戻る</button>
+            </div>
+        </div>
+
+        <!-- バトル画面 -->
+        <div id="battle-screen" class="screen">
+            <!-- ステータスエリア -->
+            <div class="status-area">
+                <div class="player-status">
+                    <div class="character-name">人間</div>
+                    <div class="hp-bar">
+                        HP: <div class="hp-container">
+                            <div id="player-hp-fill" class="hp-fill"></div>
+                        </div>
+                        <span id="player-hp-text">30/30</span>
+                    </div>
+                </div>
+                <div class="boss-status">
+                    <div class="character-name">マエノ</div>
+                    <div class="hp-bar">
+                        HP: <div class="hp-container">
+                            <div id="boss-hp-fill" class="hp-fill"></div>
+                        </div>
+                        <span id="boss-hp-text">100/100</span>
+                    </div>
+                    <div class="enemy-state-indicator">
+                        <span id="enemy-state-text">通常状態</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 敵画像表示エリア -->
+            <div class="enemy-display">
+                <img id="enemy-image" src="https://pplx-res.cloudinary.com/image/upload/v1750737901/gpt4o_images/pxmhkfnklzkjki8rbn4w.png" alt="マエノ" class="enemy-sprite">
+                <div id="state-effect" class="state-effect"></div>
+            </div>
+
+            <!-- バトルエリア -->
+            <div class="battle-area">
+                <canvas id="battle-canvas" width="600" height="300"></canvas>
+            </div>
+
+            <!-- ダイアログエリア -->
+            <div id="dialog-area" class="dialog-area">
+                <div id="dialog-text" class="dialog-text"></div>
+            </div>
+
+            <!-- コマンドエリア -->
+            <div id="command-area" class="command-area">
+                <button class="command-btn btn btn--secondary" data-command="attack">たたかう</button>
+                <button class="command-btn btn btn--secondary" data-command="act">こうどう</button>
+                <button class="command-btn btn btn--secondary" data-command="item">アイテム</button>
+                <button class="command-btn btn btn--secondary" data-command="mercy">みのがす</button>
+            </div>
+
+            <!-- 攻撃ゲージエリア -->
+            <div id="attack-gauge-area" class="attack-gauge-area hidden">
+                <div class="attack-gauge">
+                    <div class="gauge-bar">
+                        <div id="gauge-target" class="gauge-target"></div>
+                        <div id="gauge-indicator" class="gauge-indicator"></div>
+                    </div>
+                </div>
+                <p>スペースキーまたはクリックでゲージを止めろ！</p>
+            </div>
+
+            <!-- ヘルプボタン -->
+            <button id="battle-help-btn" class="help-button">?</button>
+        </div>
+
+        <!-- 終了画面 -->
+        <div id="end-screen" class="screen">
+            <div class="end-content">
+                <h2 id="end-title">結果</h2>
+                <p id="end-message"></p>
+                <div class="end-buttons">
+                    <button id="retry-btn" class="btn btn--primary">もう一度</button>
+                    <button id="title-return-btn" class="btn btn--secondary">タイトルに戻る</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- モバイルコントロール -->
+        <div id="mobile-controls" class="mobile-controls">
+            <div class="dpad">
+                <button class="dpad-btn" data-direction="up">↑</button>
+                <button class="dpad-btn" data-direction="left">←</button>
+                <button class="dpad-btn" data-direction="down">↓</button>
+                <button class="dpad-btn" data-direction="right">→</button>
+            </div>
+            <button id="mobile-action-btn" class="action-btn">アクション</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
